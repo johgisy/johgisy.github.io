@@ -2,9 +2,110 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Github Pages test </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interaktiver Funktionsplot (Live-Steigung)</title>
+    <!-- Chart.js über CDN einbinden -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        .slider-box {
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+        input[type="range"] {
+            width: 300px;
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Energieminimierung mit Nebenbedingungen</h1>
+
+    <h1>Interaktiver Live-Funktionsplot</h1>
+    <p>Formel: <strong>f(x) = m * x</strong></p>
+
+    <!-- Regler für die Steigung m -->
+    <div class="slider-box">
+        <label for="steigung">Steigung (m): </label>
+        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
+        <span id="slider-wert">1.0</span>
+    </div>
+
+    <!-- Container für den Plot -->
+    <div class="container">
+        <canvas id="meinPlot"></canvas>
+    </div>
+
+    <script>
+        // 1. Variablen und Elemente initialisieren
+        const slider = document.getElementById('steigung');
+        const sliderWert = document.getElementById('slider-wert');
+        const ctx = document.getElementById('meinPlot').getContext('2d');
+
+        // Definition des X-Bereichs (von -10 bis 10)
+        const xWerte = Array.from({length: 21}, (_, i) => i - 10);
+
+        // Funktion zur Berechnung der Y-Werte basierend auf m
+        function berechneYWerte(m) {
+            return xWerte.map(x => m * x);
+        }
+
+        // 2. Diagramm (Chart.js) initial erstellen
+        let aktuellesM = parseFloat(slider.value);
+        const meinChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: xWerte, // X-Achsen-Beschriftung
+                datasets: [{
+                    label: `f(x) = ${aktuellesM} * x`,
+                    data: berechneYWerte(aktuellesM),
+                    borderColor: '#007BFF',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    tension: 0.1 // Kurvenglättung
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'X-Achse' },
+                        grid: { color: '#e5e5e5' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Y-Achse' },
+                        min: -50, // Feste Achsenskalierung verhindert "Springen" beim Schieben
+                        max: 50,
+                        grid: { color: '#e5e5e5' }
+                    }
+                }
+            }
+        });
+
+        // 3. Event-Listener für den Schieberegler (Live-Update)
+        slider.addEventListener('input', function() {
+            const m = parseFloat(this.value);
+            
+            // Textanzeige neben dem Slider aktualisieren
+            sliderWert.textContent = m.toFixed(1);
+
+            // Daten im Chart überschreiben
+            meinChart.data.datasets[0].data = berechneYWerte(m);
+            meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
+
+            // Chart flüssig neu zeichnen
+            meinChart.update('none'); // 'none' deaktiviert die Standard-Animation für maximale Performance beim Schieben
+        });
+    </script>
+
 </body>
 </html>
