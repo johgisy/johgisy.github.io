@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Funktionsplot mit Canvas</title>
+    <title>Funktionsplot mit m und b</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,14 +11,31 @@
             margin: 40px auto;
             text-align: center;
         }
+        .control-panel {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
         .slider-box {
-            margin: 20px 0;
+            margin: 10px 0;
             font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .slider-box label {
+            width: 180px;
+            text-align: right;
         }
         input[type="range"] {
-            width: 250px;
-            margin-left: 10px;
-            vertical-align: middle;
+            width: 200px;
+            margin: 0 15px;
+        }
+        .wert-anzeige {
+            width: 50px;
+            text-align: left;
+            font-weight: bold;
         }
         canvas {
             border: 1px solid #ccc;
@@ -30,12 +47,23 @@
 <body>
 
     <h1>Interaktiver Live-Funktionsplot</h1>
-    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
+    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x + b</strong></p>
 
-    <div class="slider-box">
-        <label for="steigung">Steigung (m): </label>
-        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
-        <span id="slider-wert">1.0</span>
+    <!-- Bedienfeld für beide Regler -->
+    <div class="control-panel">
+        <!-- Regler für die Steigung m -->
+        <div class="slider-box">
+            <label for="steigung">Steigung (m):</label>
+            <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
+            <span id="m-wert" class="wert-anzeige">1.0</span>
+        </div>
+
+        <!-- Neuer Regler für den Y-Achsenabschnitt b -->
+        <div class="slider-box">
+            <label for="abschnitt">Achsenabschnitt (b):</label>
+            <input type="range" id="abschnitt" min="-5" max="5" step="0.1" value="0">
+            <span id="b-wert" class="wert-anzeige">0.0</span>
+        </div>
     </div>
 
     <!-- Das Zeichenfeld -->
@@ -44,12 +72,16 @@
     <script>
         const canvas = document.getElementById('plotCanvas');
         const ctx = canvas.getContext('2d');
-        const slider = document.getElementById('steigung');
-        const sliderWert = document.getElementById('slider-wert');
+        
+        const sliderM = document.getElementById('steigung');
+        const sliderB = document.getElementById('abschnitt');
+        
+        const mWertAnzeige = document.getElementById('m-wert');
+        const bWertAnzeige = document.getElementById('b-wert');
 
-        // Mathematischer Bereich
+        // Mathematischer Bereich des Koordinatensystems
         const xMin = -1, xMax = 5;
-        const yMin = -6, yMax = 6; // Y-Achse angepasst für optimale Sichtbarkeit
+        const yMin = -10, yMax = 10; // Erweitert, damit b Platz zum Wandern hat
 
         // Funktion zur Umrechnung von Mathe-Koordinaten in Pixel-Koordinaten
         function toPixelX(x) {
@@ -57,22 +89,27 @@
         }
 
         function toPixelY(y) {
-            // Y-Achse spiegeln, da Pixel von oben nach unten zählen
+            // Y-Achse spiegeln, da Pixel im Canvas von oben nach unten zählen
             return canvas.height - (((y - yMin) / (yMax - yMin)) * canvas.height);
         }
 
         function zeichnePlot() {
-            const m = parseFloat(slider.value);
-            sliderWert.textContent = m.toFixed(1);
+            // Aktuelle Werte aus den Slidern auslesen
+            const m = parseFloat(sliderM.value);
+            const b = parseFloat(sliderB.value);
 
-            // Canvas leeren
+            // Textanzeigen neben den Slidern aktualisieren
+            mWertAnzeige.textContent = m.toFixed(1);
+            bWertAnzeige.textContent = b.toFixed(1);
+
+            // Canvas für den neuen Frame komplett leeren
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Koordinatengitter zeichnen
-            ctx.strokeStyle = '#e0e0e0';
+            // 1. Koordinatengitter zeichnen (Schrittweite 1)
+            ctx.strokeStyle = '#e5e5e5';
             ctx.lineWidth = 1;
             
-            // Vertikale Linien (X-Werte)
+            // Vertikale Gitterlinien (X-Achse)
             for (let x = xMin; x <= xMax; x++) {
                 let px = toPixelX(x);
                 ctx.beginPath();
@@ -80,8 +117,8 @@
                 ctx.lineTo(px, canvas.height);
                 ctx.stroke();
             }
-            // Horizontale Linien (Y-Werte)
-            for (let y = Math.ceil(yMin); y <= yMax; y++) {
+            // Horizontale Gitterlinien (Y-Achse)
+            for (let y = yMin; y <= yMax; y++) {
                 let py = toPixelY(y);
                 ctx.beginPath();
                 ctx.moveTo(0, py);
@@ -89,18 +126,18 @@
                 ctx.stroke();
             }
 
-            // 2. Achsen zeichnen (falls sichtbar im Intervall)
-            ctx.strokeStyle = '#333333';
+            // 2. Hauptachsen fett zeichnen (falls sie im Sichtfeld liegen)
+            ctx.strokeStyle = '#222222';
             ctx.lineWidth = 2;
             
-            // Y-Achse (bei x = 0)
+            // Haupt-Y-Achse (bei x = 0)
             if (xMin <= 0 && xMax >= 0) {
                 ctx.beginPath();
                 ctx.moveTo(toPixelX(0), 0);
                 ctx.lineTo(toPixelX(0), canvas.height);
                 ctx.stroke();
             }
-            // X-Achse (bei y = 0)
+            // Haupt-X-Achse (bei y = 0)
             if (yMin <= 0 && yMax >= 0) {
                 ctx.beginPath();
                 ctx.moveTo(0, toPixelY(0));
@@ -108,383 +145,28 @@
                 ctx.stroke();
             }
 
-            // 3. Den Funktionsgraphen zeichnen f(x) = m * x
+            // 3. Den Funktionsgraphen zeichnen: f(x) = m * x + b
             ctx.strokeStyle = '#007BFF';
             ctx.lineWidth = 4;
             ctx.beginPath();
 
-            // Startpunkt bei x = -1
-            let startY = m * xMin;
+            // Startpunkt bei x = -1 berechnen
+            let startY = m * xMin + b;
             ctx.moveTo(toPixelX(xMin), toPixelY(startY));
 
-            // Endpunkt bei x = 5
-            let endY = m * xMax;
+            // Endpunkt bei x = 5 berechnen
+            let endY = m * xMax + b;
             ctx.lineTo(toPixelX(xMax), toPixelY(endY));
             
             ctx.stroke();
         }
 
-        // Event-Listener für Live-Interaktionen
-        slider.addEventListener('input', zeichnePlot);
+        // Event-Listener: Beide Regler rufen bei Änderung dieselbe Funktion auf
+        sliderM.addEventListener('input', zeichnePlot);
+        sliderB.addEventListener('input', zeichnePlot);
 
         // Initiales Zeichnen beim Laden der Seite
         zeichnePlot();
-    </script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Funktionierender Funktionsplot</title>
-    <!-- Stabile Chart.js Version über CDN -->
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-            text-align: center;
-        }
-        .container {
-            margin-top: 20px;
-            position: relative;
-            height: 400px;
-            width: 100%;
-            background-color: #fafafa;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .slider-box {
-            margin: 20px 0;
-            font-size: 1.2rem;
-        }
-        input[type="range"] {
-            width: 300px;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>Interaktiver Live-Funktionsplot</h1>
-    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
-
-    <div class="slider-box">
-        <label for="steigung">Steigung (m): </label>
-        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
-        <span id="slider-wert">1.0</span>
-    </div>
-
-    <div class="container">
-        <canvas id="meinPlot"></canvas>
-    </div>
-
-    <script>
-        const slider = document.getElementById('steigung');
-        const sliderWert = document.getElementById('slider-wert');
-        const ctx = document.getElementById('meinPlot').getContext('2d');
-
-        // Erzeugt ein Array mit X-Werten von -1 bis 5
-        const xWerte = [];
-        for (let x = -1; x <= 5; x += 0.5) {
-            xWerte.push(x);
-        }
-
-        // Generiert die Daten als Objekt-Paare {x: ..., y: ...} für Chart.js
-        function generiereDaten(m) {
-            return xWerte.map(x => ({ x: x, y: m * x }));
-        }
-
-        // Initialisierung des Diagramms mit dem Typ 'linear'
-        let initialesM = parseFloat(slider.value);
-        const meinChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    label: `f(x) = ${initialesM.toFixed(1)} * x`,
-                    data: generiereDaten(initialesM),
-                    borderColor: '#007BFF',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    borderWidth: 3,
-                    pointRadius: 4,
-                    tension: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear', // Erzwingt eine echte mathematische X-Achse
-                        min: -1,
-                        max: 5,
-                        title: { display: true, text: 'X-Achse' }
-                    },
-                    y: {
-                        min: -25,
-                        max: 25,
-                        title: { display: true, text: 'Y-Achse' }
-                    }
-                }
-            }
-        });
-
-        // Event-Listener für das Live-Update beim Schieben
-        slider.addEventListener('input', function() {
-            const m = parseFloat(this.value);
-            
-            // Textanzeige neben dem Slider aktualisieren
-            sliderWert.textContent = m.toFixed(1);
-
-            // Daten und Label im ersten Dataset (Index 0) überschreiben
-            meinChart.data.datasets[0].data = generiereDaten(m);
-            meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
-
-            // Diagramm sofort neu zeichnen
-            meinChart.update('none');
-        });
-    </script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Funktionierender Funktionsplot</title>
-    <!-- Stabile Chart.js Version über CDN -->
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-            text-align: center;
-        }
-        .container {
-            margin-top: 20px;
-            position: relative;
-            height: 400px;
-            width: 100%;
-            background-color: #fafafa;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .slider-box {
-            margin: 20px 0;
-            font-size: 1.2rem;
-        }
-        input[type="range"] {
-            width: 300px;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>Interaktiver Live-Funktionsplot</h1>
-    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
-
-    <div class="slider-box">
-        <label for="steigung">Steigung (m): </label>
-        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
-        <span id="slider-wert">1.0</span>
-    </div>
-
-    <div class="container">
-        <canvas id="meinPlot"></canvas>
-    </div>
-
-    <script>
-        const slider = document.getElementById('steigung');
-        const sliderWert = document.getElementById('slider-wert');
-        const ctx = document.getElementById('meinPlot').getContext('2d');
-
-        // Erzeugt ein Array mit X-Werten von -1 bis 5
-        const xWerte = [];
-        for (let x = -1; x <= 5; x += 0.5) {
-            xWerte.push(x);
-        }
-
-        // Generiert die Daten als Objekt-Paare {x: ..., y: ...} für Chart.js
-        function generiereDaten(m) {
-            return xWerte.map(x => ({ x: x, y: m * x }));
-        }
-
-        // Initialisierung des Diagramms mit dem Typ 'linear'
-        let initialesM = parseFloat(slider.value);
-        const meinChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    label: `f(x) = ${initialesM.toFixed(1)} * x`,
-                    data: generiereDaten(initialesM),
-                    borderColor: '#007BFF',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    borderWidth: 3,
-                    pointRadius: 4,
-                    tension: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: 'linear', // Erzwingt eine echte mathematische X-Achse
-                        min: -1,
-                        max: 5,
-                        title: { display: true, text: 'X-Achse' }
-                    },
-                    y: {
-                        min: -25,
-                        max: 25,
-                        title: { display: true, text: 'Y-Achse' }
-                    }
-                }
-            }
-        });
-
-        // Event-Listener für das Live-Update beim Schieben
-        slider.addEventListener('input', function() {
-            const m = parseFloat(this.value);
-            
-            // Textanzeige neben dem Slider aktualisieren
-            sliderWert.textContent = m.toFixed(1);
-
-            // Daten und Label im ersten Dataset (Index 0) überschreiben
-            meinChart.data.datasets[0].data = generiereDaten(m);
-            meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
-
-            // Diagramm sofort neu zeichnen
-            meinChart.update('none');
-        });
-    </script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktiver Funktionsplot (GitHub Pages - Fix)</title>
-    <!-- Chart.js über CDN einbinden -->
-    <script src="https://jsdelivr.net"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
-            text-align: center;
-        }
-        .container {
-            margin-top: 20px;
-            position: relative;
-            height: 400px;
-            width: 100%;
-        }
-        .slider-box {
-            margin: 20px 0;
-            font-size: 1.2rem;
-        }
-        input[type="range"] {
-            width: 300px;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>Interaktiver Live-Funktionsplot</h1>
-    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
-
-    <!-- Regler für die Steigung m -->
-    <div class="slider-box">
-        <label for="steigung">Steigung (m): </label>
-        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
-        <span id="slider-wert">1.0</span>
-    </div>
-
-    <!-- Container für den Plot -->
-    <div class="container">
-        <canvas id="meinPlot"></canvas>
-    </div>
-
-    <script>
-        const slider = document.getElementById('steigung');
-        const sliderWert = document.getElementById('slider-wert');
-        const ctx = document.getElementById('meinPlot').getContext('2d');
-
-        // 1. Definiere das präzise Intervall von -1 bis 5
-        const xWerte = [];
-        for (let x = -1; x <= 5; x += 0.5) {
-            xWerte.push(x);
-        }
-
-        // Funktion zur Berechnung der Y-Werte basierend auf m
-        function berechneYWerte(m) {
-            return xWerte.map(x => m * x);
-        }
-
-        // 2. Diagramm (Chart.js) initial erstellen
-        let aktuellesM = parseFloat(slider.value);
-        const meinChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: xWerte, 
-                datasets: [{
-                    label: `f(x) = ${aktuellesM.toFixed(1)} * x`,
-                    data: berechneYWerte(aktuellesM),
-                    borderColor: '#007BFF',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    borderWidth: 3,
-                    pointRadius: 4,
-                    tension: 0 
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        title: { display: true, text: 'X-Achse' },
-                        grid: { color: '#e5e5e5' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Y-Achse' },
-                        min: -25, 
-                        max: 25,
-                        grid: { color: '#e5e5e5' }
-                    }
-                }
-            }
-        });
-
-        // 3. Event-Listener für das flüssige Live-Update beim Schieben
-        slider.addEventListener('input', function() {
-            const m = parseFloat(this.value);
-            
-            // Textanzeige neben dem Slider aktualisieren
-            sliderWert.textContent = m.toFixed(1);
-
-            // JETZT EXAKT: Datenzugriff über das erste Element des Arrays mittels [0]
-            meinChart.data.datasets[0].data = berechneYWerte(m);
-            meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
-
-            // Diagramm flüssig und ohne Ruckeln neu zeichnen
-            meinChart.update('none'); 
-        });
     </script>
 
 </body>
