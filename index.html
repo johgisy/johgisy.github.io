@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktiver Funktionsplot (GitHub Pages)</title>
+    <title>Interaktiver Funktionsplot (GitHub Pages - Fix)</title>
     <!-- Chart.js über CDN einbinden -->
     <script src="https://jsdelivr.net"></script>
     <style>
@@ -105,7 +105,7 @@
             // Textanzeige neben dem Slider aktualisieren
             sliderWert.textContent = m.toFixed(1);
 
-            // JETZT KORREKT: Datenzugriff über den Index [0] des Arrays
+            // JETZT EXAKT: Datenzugriff über das erste Element des Arrays mittels [0]
             meinChart.data.datasets[0].data = berechneYWerte(m);
             meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
 
