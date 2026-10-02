@@ -16,6 +16,9 @@
         }
         .container {
             margin-top: 20px;
+            position: relative;
+            height: 400px;
+            width: 100%;
         }
         .slider-box {
             margin: 20px 0;
@@ -24,6 +27,7 @@
         input[type="range"] {
             width: 300px;
             margin-left: 10px;
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -49,7 +53,7 @@
         const sliderWert = document.getElementById('slider-wert');
         const ctx = document.getElementById('meinPlot').getContext('2d');
 
-        // 1. Definiere das präzise Intervall von -1 bis 5 (Schrittweite 0.5 für eine saubere Linie)
+        // 1. Definiere das präzise Intervall von -1 bis 5
         const xWerte = [];
         for (let x = -1; x <= 5; x += 0.5) {
             xWerte.push(x);
@@ -65,19 +69,20 @@
         const meinChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: xWerte, // X-Achsen-Beschriftung (-1 bis 5)
+                labels: xWerte, 
                 datasets: [{
-                    label: `f(x) = ${aktuellesM} * x`,
+                    label: `f(x) = ${aktuellesM.toFixed(1)} * x`,
                     data: berechneYWerte(aktuellesM),
                     borderColor: '#007BFF',
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
                     borderWidth: 3,
                     pointRadius: 4,
-                    tension: 0 // Exakt gerade Linie (keine künstliche Rundung)
+                    tension: 0 
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false, // Erlaubt dem Chart, die CSS-Höhe von 400px zu nutzen
                 scales: {
                     x: {
                         title: { display: true, text: 'X-Achse' },
@@ -85,7 +90,6 @@
                     },
                     y: {
                         title: { display: true, text: 'Y-Achse' },
-                        // Fester Y-Bereich passend zur maximalen Steigung (5 * 5 = 25)
                         min: -25, 
                         max: 25,
                         grid: { color: '#e5e5e5' }
@@ -101,7 +105,7 @@
             // Textanzeige neben dem Slider aktualisieren
             sliderWert.textContent = m.toFixed(1);
 
-            // Daten im Chart live austauschen
+            // KORREKTUR: Zugriff auf das erste Element des Datasets-Arrays [0]
             meinChart.data.datasets[0].data = berechneYWerte(m);
             meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
 
