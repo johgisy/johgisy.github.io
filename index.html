@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktiver Funktionsplot (Intervall -1 bis 5)</title>
+    <title>Interaktiver Funktionsplot (GitHub Pages)</title>
     <!-- Chart.js über CDN einbinden -->
     <script src="https://jsdelivr.net"></script>
     <style>
@@ -82,7 +82,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // Erlaubt dem Chart, die CSS-Höhe von 400px zu nutzen
+                maintainAspectRatio: false,
                 scales: {
                     x: {
                         title: { display: true, text: 'X-Achse' },
@@ -105,11 +105,11 @@
             // Textanzeige neben dem Slider aktualisieren
             sliderWert.textContent = m.toFixed(1);
 
-            // KORREKTUR: Zugriff auf das erste Element des Datasets-Arrays [0]
+            // JETZT KORREKT: Datenzugriff über den Index [0] des Arrays
             meinChart.data.datasets[0].data = berechneYWerte(m);
             meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
 
-            // Performance-optimiertes Update ohne Animations-Ruckeln
+            // Diagramm flüssig und ohne Ruckeln neu zeichnen
             meinChart.update('none'); 
         });
     </script>
