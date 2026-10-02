@@ -3,6 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funktionsplot mit Canvas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            text-align: center;
+        }
+        .slider-box {
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+        input[type="range"] {
+            width: 250px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background-color: #fbfbfb;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Interaktiver Live-Funktionsplot</h1>
+    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
+
+    <div class="slider-box">
+        <label for="steigung">Steigung (m): </label>
+        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
+        <span id="slider-wert">1.0</span>
+    </div>
+
+    <!-- Das Zeichenfeld -->
+    <canvas id="plotCanvas" width="500" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('plotCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('steigung');
+        const sliderWert = document.getElementById('slider-wert');
+
+        // Mathematischer Bereich
+        const xMin = -1, xMax = 5;
+        const yMin = -6, yMax = 6; // Y-Achse angepasst für optimale Sichtbarkeit
+
+        // Funktion zur Umrechnung von Mathe-Koordinaten in Pixel-Koordinaten
+        function toPixelX(x) {
+            return ((x - xMin) / (xMax - xMin)) * canvas.width;
+        }
+
+        function toPixelY(y) {
+            // Y-Achse spiegeln, da Pixel von oben nach unten zählen
+            return canvas.height - (((y - yMin) / (yMax - yMin)) * canvas.height);
+        }
+
+        function zeichnePlot() {
+            const m = parseFloat(slider.value);
+            sliderWert.textContent = m.toFixed(1);
+
+            // Canvas leeren
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Koordinatengitter zeichnen
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+            
+            // Vertikale Linien (X-Werte)
+            for (let x = xMin; x <= xMax; x++) {
+                let px = toPixelX(x);
+                ctx.beginPath();
+                ctx.moveTo(px, 0);
+                ctx.lineTo(px, canvas.height);
+                ctx.stroke();
+            }
+            // Horizontale Linien (Y-Werte)
+            for (let y = Math.ceil(yMin); y <= yMax; y++) {
+                let py = toPixelY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo(canvas.width, py);
+                ctx.stroke();
+            }
+
+            // 2. Achsen zeichnen (falls sichtbar im Intervall)
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 2;
+            
+            // Y-Achse (bei x = 0)
+            if (xMin <= 0 && xMax >= 0) {
+                ctx.beginPath();
+                ctx.moveTo(toPixelX(0), 0);
+                ctx.lineTo(toPixelX(0), canvas.height);
+                ctx.stroke();
+            }
+            // X-Achse (bei y = 0)
+            if (yMin <= 0 && yMax >= 0) {
+                ctx.beginPath();
+                ctx.moveTo(0, toPixelY(0));
+                ctx.lineTo(canvas.width, toPixelY(0));
+                ctx.stroke();
+            }
+
+            // 3. Den Funktionsgraphen zeichnen f(x) = m * x
+            ctx.strokeStyle = '#007BFF';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+
+            // Startpunkt bei x = -1
+            let startY = m * xMin;
+            ctx.moveTo(toPixelX(xMin), toPixelY(startY));
+
+            // Endpunkt bei x = 5
+            let endY = m * xMax;
+            ctx.lineTo(toPixelX(xMax), toPixelY(endY));
+            
+            ctx.stroke();
+        }
+
+        // Event-Listener für Live-Interaktionen
+        slider.addEventListener('input', zeichnePlot);
+
+        // Initiales Zeichnen beim Laden der Seite
+        zeichnePlot();
+    </script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Funktionierender Funktionsplot</title>
     <!-- Stabile Chart.js Version über CDN -->
     <script src="https://jsdelivr.net"></script>
