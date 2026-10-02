@@ -122,6 +122,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funktionierender Funktionsplot</title>
+    <!-- Stabile Chart.js Version über CDN -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        .container {
+            margin-top: 20px;
+            position: relative;
+            height: 400px;
+            width: 100%;
+            background-color: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .slider-box {
+            margin: 20px 0;
+            font-size: 1.2rem;
+        }
+        input[type="range"] {
+            width: 300px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Interaktiver Live-Funktionsplot</h1>
+    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
+
+    <div class="slider-box">
+        <label for="steigung">Steigung (m): </label>
+        <input type="range" id="steigung" min="-5" max="5" step="0.1" value="1">
+        <span id="slider-wert">1.0</span>
+    </div>
+
+    <div class="container">
+        <canvas id="meinPlot"></canvas>
+    </div>
+
+    <script>
+        const slider = document.getElementById('steigung');
+        const sliderWert = document.getElementById('slider-wert');
+        const ctx = document.getElementById('meinPlot').getContext('2d');
+
+        // Erzeugt ein Array mit X-Werten von -1 bis 5
+        const xWerte = [];
+        for (let x = -1; x <= 5; x += 0.5) {
+            xWerte.push(x);
+        }
+
+        // Generiert die Daten als Objekt-Paare {x: ..., y: ...} für Chart.js
+        function generiereDaten(m) {
+            return xWerte.map(x => ({ x: x, y: m * x }));
+        }
+
+        // Initialisierung des Diagramms mit dem Typ 'linear'
+        let initialesM = parseFloat(slider.value);
+        const meinChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: `f(x) = ${initialesM.toFixed(1)} * x`,
+                    data: generiereDaten(initialesM),
+                    borderColor: '#007BFF',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    tension: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear', // Erzwingt eine echte mathematische X-Achse
+                        min: -1,
+                        max: 5,
+                        title: { display: true, text: 'X-Achse' }
+                    },
+                    y: {
+                        min: -25,
+                        max: 25,
+                        title: { display: true, text: 'Y-Achse' }
+                    }
+                }
+            }
+        });
+
+        // Event-Listener für das Live-Update beim Schieben
+        slider.addEventListener('input', function() {
+            const m = parseFloat(this.value);
+            
+            // Textanzeige neben dem Slider aktualisieren
+            sliderWert.textContent = m.toFixed(1);
+
+            // Daten und Label im ersten Dataset (Index 0) überschreiben
+            meinChart.data.datasets[0].data = generiereDaten(m);
+            meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
+
+            // Diagramm sofort neu zeichnen
+            meinChart.update('none');
+        });
+    </script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interaktiver Funktionsplot (GitHub Pages - Fix)</title>
     <!-- Chart.js über CDN einbinden -->
     <script src="https://jsdelivr.net"></script>
