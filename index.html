@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interaktiver Funktionsplot (Live-Steigung)</title>
+    <title>Interaktiver Funktionsplot (Intervall -1 bis 5)</title>
     <!-- Chart.js über CDN einbinden -->
     <script src="https://jsdelivr.net"></script>
     <style>
@@ -30,7 +30,7 @@
 <body>
 
     <h1>Interaktiver Live-Funktionsplot</h1>
-    <p>Formel: <strong>f(x) = m * x</strong></p>
+    <p>Intervall: <strong>[-1, 5]</strong> | Formel: <strong>f(x) = m * x</strong></p>
 
     <!-- Regler für die Steigung m -->
     <div class="slider-box">
@@ -45,13 +45,15 @@
     </div>
 
     <script>
-        // 1. Variablen und Elemente initialisieren
         const slider = document.getElementById('steigung');
         const sliderWert = document.getElementById('slider-wert');
         const ctx = document.getElementById('meinPlot').getContext('2d');
 
-        // Definition des X-Bereichs (von -10 bis 10)
-        const xWerte = Array.from({length: 21}, (_, i) => i - 10);
+        // 1. Definiere das präzise Intervall von -1 bis 5 (Schrittweite 0.5 für eine saubere Linie)
+        const xWerte = [];
+        for (let x = -1; x <= 5; x += 0.5) {
+            xWerte.push(x);
+        }
 
         // Funktion zur Berechnung der Y-Werte basierend auf m
         function berechneYWerte(m) {
@@ -63,7 +65,7 @@
         const meinChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: xWerte, // X-Achsen-Beschriftung
+                labels: xWerte, // X-Achsen-Beschriftung (-1 bis 5)
                 datasets: [{
                     label: `f(x) = ${aktuellesM} * x`,
                     data: berechneYWerte(aktuellesM),
@@ -71,7 +73,7 @@
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
                     borderWidth: 3,
                     pointRadius: 4,
-                    tension: 0.1 // Kurvenglättung
+                    tension: 0 // Exakt gerade Linie (keine künstliche Rundung)
                 }]
             },
             options: {
@@ -83,27 +85,28 @@
                     },
                     y: {
                         title: { display: true, text: 'Y-Achse' },
-                        min: -50, // Feste Achsenskalierung verhindert "Springen" beim Schieben
-                        max: 50,
+                        // Fester Y-Bereich passend zur maximalen Steigung (5 * 5 = 25)
+                        min: -25, 
+                        max: 25,
                         grid: { color: '#e5e5e5' }
                     }
                 }
             }
         });
 
-        // 3. Event-Listener für den Schieberegler (Live-Update)
+        // 3. Event-Listener für das flüssige Live-Update beim Schieben
         slider.addEventListener('input', function() {
             const m = parseFloat(this.value);
             
             // Textanzeige neben dem Slider aktualisieren
             sliderWert.textContent = m.toFixed(1);
 
-            // Daten im Chart überschreiben
+            // Daten im Chart live austauschen
             meinChart.data.datasets[0].data = berechneYWerte(m);
             meinChart.data.datasets[0].label = `f(x) = ${m.toFixed(1)} * x`;
 
-            // Chart flüssig neu zeichnen
-            meinChart.update('none'); // 'none' deaktiviert die Standard-Animation für maximale Performance beim Schieben
+            // Performance-optimiertes Update ohne Animations-Ruckeln
+            meinChart.update('none'); 
         });
     </script>
 
